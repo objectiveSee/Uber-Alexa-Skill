@@ -3,6 +3,9 @@ var Q = require('q');
 var _ = require('underscore');
 var request = require('request');
 var config = require('config');
+var UberHelperClass = require('./uber-helper');
+
+var UberHelper = new UberHelperClass();
 
 var uber = new Uber({
   client_id: config.get('Uber.client_id'),
@@ -19,28 +22,85 @@ if (! config.has('Uber.sandbox')) {
 	process.exit(1);
 }
 
-var PREFERRED_UBER_TYPE = 'uberX';
+var getProductListPromise = function(params) {
 
-
-var findRidesAndSelectBest = function(params) {
 	var deferred = Q.defer();
-	uber.products.list(params, function (err, res) {
-	  if (err) {
-	  	console.error(err);
-	  	deferred.reject(err);
-	  } else {
-	  	// console.log('Ride List='+JSON.stringify(res,undefined,'\t'));
-	  	var ride = getBestRide(res);
-	  	ride.pronouncable_name = makePronouncableName(ride);
-	  	if ( !ride ) {
-	  		console.error('no ride found');
-	  		deferred.reject(new Error('none found'));
-	  	} else {
-	  }
-	  		console.log('Found ride.');
-	  		deferred.resolve(ride);
-	  	}
+	var myParams = JSON.parse(JSON.stringify(params));	// makes a copy so we can mutate
+
+	if (!myParams.latitude) {
+		myParams.latitude = myParams.start_latitude;
+		delete myParams.start_latitude;
+	}
+	if (!myParams.longitude) {
+		myParams.longitude = myParams.start_longitude;
+		delete myParams.start_longitude;
+	}
+
+	console.log('[getProductListPromise] myParams='+JSON.stringify(myParams));
+
+	uber.products.list(myParams, function (err, res) {
+		if (err) {
+			deferred.reject(err);
+		} else {
+			deferred.resolve(res.products);
+		}
 	});
+	return deferred.promise;
+};
+
+var getEstimatePromise = function(params) {
+
+	var deferred = Q.defer();
+
+	console.log('[getEstimatePromise] params='+JSON.stringify(params));
+
+	uber.requests.estimate(params, function (err, res) {
+		if (err) {
+			console.log('[getEstimatePromise] err='+JSON.stringify(err));
+			deferred.reject(err);
+		} else {
+			console.log('[getEstimatePromise] res='+JSON.stringify(res));
+			deferred.resolve(res);
+		}
+	});
+	return deferred.promise;
+};
+
+
+var findBestRideAndEstimate = function(params) {
+
+	var deferred = Q.defer();
+
+	console.log('[findBestRideAndEstimate] params='+JSON.stringify(params));
+	var ride;
+
+	getProductListPromise(params)
+	.then(function(rides) {
+		console.log('[findBestRideAndEstimate] rides='+JSON.stringify(rides));
+
+		ride = UberHelper.getPreferredRide(rides);
+		console.log('[findBestRideAndEstimate] preferred ride='+JSON.stringify(ride));
+
+		if ( !ride ) {
+			throw new Error('Could not find preferred ride');
+		}
+
+		ride.pronouncable_name = UberHelper.pronouncableName(ride);
+		params.product_id = ride.product_id;
+		console.log('[findBestRideAndEstimate] getting estimates for ride');
+		return getEstimatePromise(params);
+	})
+	.then(function(estimate) {
+		console.log('[findBestRideAndEstimate] estimate='+JSON.stringify(estimate));
+		deferred.resolve({
+			ride: ride,
+			estimate: estimate
+		});
+	})
+	.fail(function(err) {
+		deferred.reject(err);
+	});
+
 	return deferred.promise;
 };
 
@@ -80,7 +140,10 @@ var makeRideConfirmationRequest = function(ride, params) {
 			start_longitude: params.longitude,
 			start_latitude: params.latitude,
 		};
-		console.log('Will request ride:'+JSON.stringify(ride,null,'\t'));
+		if ( params.surge_confirmation_id ) {
+			requestParams.surge_confirmation_id = params.surge_confirmation_id;
+		}
+		console.log('Will request ride:'+JSON.stringify(ride,null,'\t')+' with params: '+JSON.stringify(requestParams));
 		return requestRidePromise(requestParams);
 	}
 };
@@ -130,92 +193,69 @@ var timeEstimatePromise = function(params) {
 // 	return deferred.promise;
 // };
 
-var requestEstimatePromise = function(params) {
+// var requestEstimatePromise = function(params) {
 
-	console.log('requesting ride estimate....');
+// 	console.log('requesting ride estimate....');
 
-	var deferred = Q.defer();
+// 	var deferred = Q.defer();
 
-	uber.requests.estimate(params, function (err, res) {
+// 	uber.requests.estimate(params, function (err, res) {
 
-	  console.log('[SKILL] request estimate done.');
+// 	  console.log('[SKILL] request estimate done.');
 
-	  if (err) {
-	  	console.error(err);
-	  	deferred.reject(err);
-	  } else {
-	  	console.log('request estimate says'+ JSON.stringify(res));
-  		deferred.resolve(res);
-  	  }
-	});
+// 	  if (err) {
+// 	  	console.error(err);
+// 	  	deferred.reject(err);
+// 	  } else {
+// 	  	console.log('request estimate says'+ JSON.stringify(res));
+//   		deferred.resolve(res);
+//   	  }
+// 	});
 
-	return deferred.promise;
+// 	return deferred.promise;
 
-};
+// };
 
 var getBestTimeEstimate = function(times) {
-	
-	for ( var i = 0; i < times.length; i++ ) {
 
-		var product_estimate = times[i];
-		if ( product_estimate.display_name == PREFERRED_UBER_TYPE ) {
-			var mins = (product_estimate.estimate / 60).toFixed(0);
-			var timeString;
-			if ( mins == 1 ) {
-				timeString = '1 minute';
-			} else if ( mins > 1 ) {
-				timeString = mins + ' minutes';
-			} else {
-				timeString = 'less than a minute';
-			}
-			return {
-				pronouncable_time : timeString,
-				pronouncable_name : makePronouncableName(product_estimate)
-			};
+	var ride = UberHelper.getPreferredRide(times);
+	var timePronounced;
+	var namePronounced;
+
+	if ( !ride ) {
+		console.log('no time estimate to use');
+		timePronounced = 'thirty or forty years. Just kidding. Uber responded with an error';
+		namePronounced = 'Uber';
+
+	} else {
+
+		console.log('Preferred Ride is '+JSON.stringify(ride));
+
+		var mins = (ride.estimate / 60).toFixed(0);
+
+		if ( mins == 1 ) {
+			timePronounced = '1 minute';
+		} else if ( mins > 1 ) {
+			timePronounced = mins + ' minutes';
+		} else {
+			timePronounced = 'less than a minute';
 		}
+		namePronounced = UberHelper.pronouncableName(ride);
 	}
 
-	console.log('no time estimate to use');
 	return {
-		pronouncable_time : 'thirty or forty years',
-		pronouncable_name :  'Uber'
+		pronouncable_time : timePronounced,
+		pronouncable_name :  namePronounced
 	};
-};
-
-var getBestRide = function(res) {
-
-	for ( var i = 0; i < res.products.length; i++ ) {
-		var ride = res.products[i];
-		if ( ride.display_name == PREFERRED_UBER_TYPE ) {
-			return ride;
-		}
-	}
-};
-
-var makePronouncableName = function(ride) {
-	switch(ride.display_name) {
-		case 'uberX':
-			return 'Uber ex';
-		case 'uberXL':
-			return 'Uber excel';
-		case 'UberBLACK':
-			return 'Uber Black';
-		case 'UberSUV':
-			return 'Uber SUV';
-		case 'uberTAXI':
-			return 'Uber Taxi';
-	}
-	console.log('no pronouncement for '+ride.display_name);
-	return ride.display_name;
 };
 
 // used for testing
 var getARide = function(params) {
 
-	return findRidesAndSelectBest(params)
-	.then(function(ride) {
+	return findBestRideAndEstimate(params)
+	.then(function(res) {
 		console.log('Making ride request now');
-		return makeRideConfirmationRequest(ride, params);
+		return makeRideConfirmationRequest(res.ride, params);
 	});
 
 };
@@ -225,13 +265,17 @@ Public Methods
 */
 
 var findMeARide = function(parameters, callback) {
-	findRidesAndSelectBest(parameters)
+
+	findBestRideAndEstimate(parameters)
 	.fail(function(error) {
 		callback(error);
 	})
-	.done(function(ride) {
-		console.log('done!'+JSON.stringify(ride,null,'\t'));
-		callback(undefined, ride);
+	.done(function(res) {
+		console.log('[findMeARide] res='+JSON.stringify(res));
+		if ( !res.ride || !res.estimate ) {
+			throw new Error('Missing ride or estimate in findMeARide');
+		}
+		callback(undefined, res.ride, res.estimate);
 	});
 };
 
@@ -249,11 +293,11 @@ var getUsername = function(callback) {
 	});
 };
 
-var confirmRideRequest = function(ride, location, callback) {
+var confirmRideRequest = function(ride, params, callback) {
 
 	console.log('Confirming ride request');
 
-	makeRideConfirmationRequest(ride, location)
+	makeRideConfirmationRequest(ride, params)
 	.then(function(riderequest) {
 		try {
 			callback(undefined, riderequest);
@@ -299,11 +343,15 @@ var whatIsTheStatusOfMyRide = function(parameters, callback) {
 /** 
 	TESTING ONLY
 **/
-// var myLocation = { latitude: 37.775, longitude: -122.42 };
-// getARide(myLocation)
-// .then(function(request) {
-// 	console.log('done! Request='+JSON.stringify(request));
-// });
+var testRequestFlow = function() {
+	console.log('[testRequestFlow] Begin');
+	var myLocation = config.get('Alexa.location');
+	getARide(myLocation)
+	.then(function(request) {
+		console.log('[testRequestFlow] Done! Request='+JSON.stringify(request));
+	});	
+}
+
 
 module.exports = {
 
@@ -311,6 +359,7 @@ module.exports = {
 	findMeARide : findMeARide,
 	confirmRideRequest : confirmRideRequest,
 	howLongForARide : howLongForARide,
-	whatIsTheStatusOfMyRide : whatIsTheStatusOfMyRide
+	whatIsTheStatusOfMyRide : whatIsTheStatusOfMyRide,
+	testRequestFlow : testRequestFlow
 };
 

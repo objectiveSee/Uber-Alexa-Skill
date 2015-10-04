@@ -8,6 +8,12 @@ var config = require('config');
  */
 
 var myLocation = config.get('Alexa.location');
+var myStartLocation = function() {
+	return {
+		start_longitude : myLocation.longitude,
+		start_latitude : myLocation.latitude
+	};
+};
 
 // Route the incoming request based on type (LaunchRequest, IntentRequest,
 // etc.) The JSON body of the request is provided in the event parameter.
@@ -18,7 +24,7 @@ exports.handler = function (event, context) {
         	console.log("event.session.application.applicationId=" + event.session.application.applicationId);
     	}
 
-    	if ( event.event_type == 'requests.status_changed' ) {
+    	if ( event.event_type == 'requests.status_changed' ) {	// web hooks from Uber (see Uber dev console)
     		console.log('Uber signaled an event status change.');
     		context.succeed({'thank you':true});
     		return;
@@ -182,8 +188,8 @@ function getWeatherRain(intent, session, callback) {
 
 exports.test = function(a,b,c) {
 	//getWeatherRain(a,b,c);
-	// uberPickupIntentStart(a,b,c);
-	UberTimeEstimateIntent(a,b,c);
+	uberPickupIntentStart(a,b,c);
+	// UberTimeEstimateIntent(a,b,c);
 };
 
 /**
@@ -200,16 +206,33 @@ function uberPickupIntentStart(intent, session, callback) {
 
     console.log('Received Uber intent. Intent='+JSON.stringify(intent));
 
-    UberSkillHandler.findMeARide(myLocation, function(err,ride) {
+    UberSkillHandler.findMeARide(myStartLocation(), function(err, ride, estimate) {
     	if ( err ) {
     		speechOutput = 'I had issues talking to Uber.';
     		shouldEndSession = true;
     	} else {
-    
+
+    		console.log('Ride='+JSON.stringify(ride)+', Estimate='+JSON.stringify(estimate));
+
     		sessionAttributes.ride = ride;
+    		sessionAttributes.estimate = estimate;
     		sessionAttributes.waiting_user_confirmation = true;
+
+    		var pickup_estimate = estimate.pickup_estimate;
+    		var surge_multiplier = estimate.price.surge_multiplier;
+    		var surge_confirmation_id = estimate.price.surge_confirmation_id;
 	
-			speechOutput = 'Do you want me to call a '+ride.pronouncable_name+'?';
+			speechOutput = 'An '+ride.pronouncable_name+' can be here in ' + pickup_estimate + ' minute';
+			if (pickup_estimate != 1 ) {
+				speechOutput += 's';
+			}
+
+			if ( surge_multiplier > 1 ) {
+				sessionAttributes.surge_confirmation_id = surge_confirmation_id;
+				speechOutput += '. There is a surge of '+surge_multiplier;
+			}
+
+			speechOutput += '. Shall I call it?';
         	repromptText = 'Ill ask again. '+speechOutput;
     	}
 
@@ -235,7 +258,14 @@ function UberPickupConfirmIntent(intent, session, callback) {
 	    	if ( userConfirmation.value == 'yes' ) {
 
 	    		respond = false;
-	    		UberSkillHandler.confirmRideRequest(session.attributes.ride, myLocation, function(err,riderequest) {
+	    		var params = myLocation;
+
+	    		if ( session.attributes.surge_confirmation_id ) {
+	    			params.surge_confirmation_id = session.attributes.surge_confirmation_id;
+	    			console.log('confirming ride with surge'+params.surge_confirmation_id);
+	    		}
+
+	    		UberSkillHandler.confirmRideRequest(session.attributes.ride, params, function(err,riderequest) {
 
 	    			if ( err || !riderequest ) {
 
@@ -245,18 +275,14 @@ function UberPickupConfirmIntent(intent, session, callback) {
 	    			} else {
 
 	    				console.log('ride request response: '+JSON.stringify(riderequest));
-	    				if ( riderequest.meta && riderequest.meta.surge_confirmation ) {	// handle surge pricing
-	    				
-	    					console.log('Handling surge!');
-	    					speechOutput = 'Surge pricing is currently in effect. Use the Uber app';
-	    				
+
+	    				if ( riderequest.errors ) {
+	    					speechOutput = 'There was an error making the request.';
 	    				} else {
-		    			
 		    				speechOutput = 'Called an '+session.attributes.ride.pronouncable_name;
 		    				if ( riderequest.surge_multiplier > 1 ) {
 		    					speechOutput = speechOutput + ' There is a surge of '+riderequest.surge_multiplier+'.';
-		    				}	    					
-	    				
+		    				}
 	    				}
 	    			}
 	    			callback(sessionAttributes, buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
@@ -323,14 +349,7 @@ function UberTimeEstimateIntent(intent, session, callback) {
 
     console.log('Received Uber time estimate intent. Intent='+JSON.stringify(intent) +', Session='+JSON.stringify(session));
 
-    var myStartLocation = function(l) {
-    	return {
-    		start_longitude : l.longitude,
-    		start_latitude : l.latitude
-    	};
-    };
-
-	UberSkillHandler.howLongForARide(myStartLocation(myLocation), function(err,estimate) {
+	UberSkillHandler.howLongForARide(myStartLocation(), function(err,estimate) {
 
 		if ( err || !estimate ) {
 			console.log('Error w/ time estimate: '+err);

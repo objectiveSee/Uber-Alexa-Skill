@@ -84,8 +84,8 @@ function onIntent(intentRequest, session, callback) {
         uberPickupIntentStart(intent, session, callback);
     } else if ("UberPickupConfirmIntent" === intentName) {
     	UberPickupConfirmIntent(intent, session, callback);
-    } else if ("WhatsMyColorIntent" === intentName) {
-        getColorFromSession(intent, session, callback);
+    } else if ("UberTimeEstimateIntent" === intentName) {
+        UberTimeEstimateIntent(intent, session, callback);
     } else if ("WeatherRain" === intentName) {
         getWeatherRain(intent, session, callback);
     } else if ("HelpIntent" === intentName) {
@@ -158,7 +158,8 @@ function getWeatherRain(intent, session, callback) {
 
 exports.test = function(a,b,c) {
 	//getWeatherRain(a,b,c);
-	uberPickupIntentStart(a,b,c);
+	// uberPickupIntentStart(a,b,c);
+	UberTimeEstimateIntent(a,b,c);
 };
 
 /**
@@ -241,6 +242,35 @@ function UberPickupConfirmIntent(intent, session, callback) {
 	}
 }
 
+function UberTimeEstimateIntent(intent, session, callback) {
+
+    var cardTitle = intent.name;
+    var repromptText = "";
+    var sessionAttributes = {};
+    var shouldEndSession = true;
+    var speechOutput = "";
+    var respond = true;
+
+    console.log('Received Uber time estimate intent. Intent='+JSON.stringify(intent) +', Session='+JSON.stringify(session));
+
+    var myStartLocation = function(l) {
+    	return {
+    		start_longitude : l.longitude,
+    		start_latitude : l.latitude
+    	};
+    };
+
+	UberSkillHandler.howLongForARide(myStartLocation(myLocation), function(err,estimate) {
+
+		if ( err || !estimate ) {
+			console.log('Error w/ time estimate: '+err);
+    		speechOutput = 'There was an error estimating the time.';	    				
+		} else {
+			speechOutput = 'An '+estimate.pronouncable_name+' can be here in '+estimate.pronouncable_time;
+		}
+		callback(sessionAttributes, buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
+	});	
+}
 
 function createPickupAttributes(date) {
     return {

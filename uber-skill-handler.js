@@ -1,6 +1,6 @@
 var Uber = require('node-uber');
-global.Q = require('q');
-global._ = require('underscore');
+var Q = require('q');
+var _ = require('underscore');
 var request = require('request');
 var config = require('config');
 
@@ -18,6 +18,8 @@ if (! config.has('Uber.sandbox')) {
 	console.log('WARNING: No sandbox flag defined. Cannot continue');
 	process.exit(1);
 }
+
+var PREFERRED_UBER_TYPE = 'uberX';
 
 
 var findRidesAndSelectBest = function(params) {
@@ -84,6 +86,29 @@ var makeRideConfirmationRequest = function(ride, params) {
 	}
 };
 
+
+var timeEstimatePromise = function(params) {
+
+	console.log('making time estimate.... params='+JSON.stringify(params));
+
+	var deferred = Q.defer();
+
+	uber.estimates.time(params, function (err, res) {
+
+	  console.log('[SKILL] time estimate done.');
+
+	  if (err) {
+	  	console.error(err);
+	  	deferred.reject(err);
+	  } else {
+	  	console.log('time estimate says'+ JSON.stringify(res));
+  		deferred.resolve(res);
+  	  }
+	});
+
+	return deferred.promise;
+};
+
 var requestEstimatePromise = function(params) {
 
 	console.log('requesting ride estimate....');
@@ -92,13 +117,13 @@ var requestEstimatePromise = function(params) {
 
 	uber.requests.estimate(params, function (err, res) {
 
-	  console.log('[SKILL] estimate() done.');
+	  console.log('[SKILL] request estimate done.');
 
 	  if (err) {
 	  	console.error(err);
 	  	deferred.reject(err);
 	  } else {
-	  	console.log('estimate says'+ JSON.stringify(res));
+	  	console.log('request estimate says'+ JSON.stringify(res));
   		deferred.resolve(res);
   	  }
 	});
@@ -107,11 +132,40 @@ var requestEstimatePromise = function(params) {
 
 };
 
+var getBestTimeEstimate = function(times) {
+	
+	for ( var i = 0; i < times.length; i++ ) {
+
+		var product_estimate = times[i];
+		if ( product_estimate.display_name == PREFERRED_UBER_TYPE ) {
+			var mins = (product_estimate.estimate / 60).toFixed(0);
+			var timeString;
+			if ( mins == 1 ) {
+				timeString = '1 minute';
+			} else if ( mins > 1 ) {
+				timeString = mins + ' minutes';
+			} else {
+				timeString = 'less than a minute';
+			}
+			return {
+				pronouncable_time : timeString,
+				pronouncable_name : makePronouncableName(product_estimate)
+			};
+		}
+	}
+
+	console.log('no time estimate to use');
+	return {
+		pronouncable_time : 'thirty or forty years',
+		pronouncable_name :  'Uber'
+	};
+};
+
 var getBestRide = function(res) {
 
 	for ( var i = 0; i < res.products.length; i++ ) {
 		var ride = res.products[i];
-		if ( ride.display_name == 'uberX' ) {
+		if ( ride.display_name == PREFERRED_UBER_TYPE ) {
 			return ride;
 		}
 	}
@@ -123,7 +177,7 @@ var makePronouncableName = function(ride) {
 			return 'Uber ex';
 			break;
 		case 'uberXL':
-			return 'Uber ex el';
+			return 'Uber excel';
 			break;
 		case 'UberBLACK':
 			return 'Uber Black';
@@ -198,6 +252,28 @@ var confirmRideRequest = function(ride, location, callback) {
 
 };
 
+var howLongForARide = function(parameters, callback) {
+
+	console.log('Time estimate request.');
+
+	timeEstimatePromise(parameters)
+	.then(function(estimate) {
+
+		var best = getBestTimeEstimate(estimate.times);
+
+		try {
+			callback(undefined, best);
+		} 
+		catch(e) {
+			console.log('callback error in confirmRideRequest. Err='+e);
+		}	// catch so catch() below doesnt get any errors and call the callback a second time
+	})
+	.catch(function(err) {
+		callback(err, undefined);
+	});
+
+};
+
 /** 
 	TESTING ONLY
 **/
@@ -211,7 +287,8 @@ module.exports = {
 
 	whatIsMyName : getUsername,
 	findMeARide : findMeARide,
-	confirmRideRequest : confirmRideRequest
+	confirmRideRequest : confirmRideRequest,
+	howLongForARide : howLongForARide
 
 };
 

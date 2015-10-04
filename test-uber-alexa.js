@@ -1,4 +1,7 @@
 var uberAlex = require('./uber-alexa.js');
+var config = require('config');
+
+var myLocation = config.get('Alexa.location');
 
 var e = {
 	session : {

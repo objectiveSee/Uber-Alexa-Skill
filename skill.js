@@ -68,16 +68,14 @@ exports.handler = function (event, context) {
  * Called when the session starts.
  */
 function onSessionStarted(sessionStartedRequest, session) {
-    console.log("onSessionStarted requestId=" + sessionStartedRequest.requestId
-                + ", sessionId=" + session.sessionId);
+    console.log("onSessionStarted requestId=" + sessionStartedRequest.requestId + ", sessionId=" + session.sessionId);
 }
 
 /**
  * Called when the user launches the skill without specifying what they want.
  */
 function onLaunch(launchRequest, session, callback) {
-    console.log("onLaunch requestId=" + launchRequest.requestId
-                + ", sessionId=" + session.sessionId);
+    console.log("onLaunch requestId=" + launchRequest.requestId + ", sessionId=" + session.sessionId);
 
     // Dispatch to your skill's launch.
     getWelcomeResponse(callback);
@@ -87,8 +85,7 @@ function onLaunch(launchRequest, session, callback) {
  * Called when the user specifies an intent for this skill.
  */
 function onIntent(intentRequest, session, callback) {
-    console.log("onIntent requestId=" + intentRequest.requestId
-                + ", sessionId=" + session.sessionId);
+    console.log("onIntent requestId=" + intentRequest.requestId + ", sessionId=" + session.sessionId);
 
     var intent = intentRequest.intent,
         intentName = intentRequest.intent.name;
@@ -116,8 +113,7 @@ function onIntent(intentRequest, session, callback) {
  * Is not called when the skill returns shouldEndSession=true.
  */
 function onSessionEnded(sessionEndedRequest, session) {
-    console.log("onSessionEnded requestId=" + sessionEndedRequest.requestId
-                + ", sessionId=" + session.sessionId);
+    console.log("onSessionEnded requestId=" + sessionEndedRequest.requestId + ", sessionId=" + session.sessionId);
     // Add cleanup logic here
 }
 
@@ -176,7 +172,7 @@ function getWeatherRain(intent, session, callback) {
 
   		} else {
   			console.log('err');
-  			speechOutput = 'error sorry dannny'
+  			speechOutput = 'error sorry dannny';
   		}
 
   		callback(sessionAttributes, buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
@@ -210,8 +206,8 @@ function uberPickupIntentStart(intent, session, callback) {
     		shouldEndSession = true;
     	} else {
     
-    		sessionAttributes['ride'] = ride;
-    		sessionAttributes['waiting_user_confirmation'] = true;
+    		sessionAttributes.ride = ride;
+    		sessionAttributes.waiting_user_confirmation = true;
 	
 			speechOutput = 'Do you want me to call a '+ride.pronouncable_name+'?';
         	repromptText = 'Ill ask again. '+speechOutput;
@@ -219,7 +215,7 @@ function uberPickupIntentStart(intent, session, callback) {
 
     	callback(sessionAttributes, buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
     });
-};
+}
 
 function UberPickupConfirmIntent(intent, session, callback) {
 
@@ -356,8 +352,7 @@ function getColorFromSession(intent, session, callback) {
         shouldEndSession = true;
     }
     else {
-        speechOutput = "I'm not sure what your favorite color is, you can say, my favorite color "
-                + " is red";
+        speechOutput = "I'm not sure what your favorite color is, you can say, my favorite color " + " is red";
     }
 
     // Setting repromptText to null signifies that we do not want to reprompt the user.
@@ -387,7 +382,7 @@ function buildSpeechletResponse(title, output, repromptText, shouldEndSession) {
             }
         },
         shouldEndSession: shouldEndSession
-    }
+    };
 }
 
 function buildResponse(sessionAttributes, speechletResponse) {
@@ -395,5 +390,5 @@ function buildResponse(sessionAttributes, speechletResponse) {
         version: "1.0",
         sessionAttributes: sessionAttributes,
         response: speechletResponse
-    }
+    };
 }

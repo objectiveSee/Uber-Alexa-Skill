@@ -107,6 +107,18 @@ function onSessionEnded(sessionEndedRequest, session) {
 
 // --------------- Functions that control the skill's behavior -----------------------
 
+// TODO: untested
+function getWelcomeResponse(intent, session, callback) {
+
+    var cardTitle = intent.name;
+    var repromptText = "";
+    var sessionAttributes = {};
+    var shouldEndSession = true;
+    var speechOutput = "Uber is ready";
+
+	callback(sessionAttributes, buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
+}
+
 function getWeatherRain(intent, session, callback) {
 
     var cardTitle = intent.name;

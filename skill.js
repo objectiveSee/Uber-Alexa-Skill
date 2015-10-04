@@ -13,7 +13,16 @@ var myLocation = config.get('Alexa.location');
 // etc.) The JSON body of the request is provided in the event parameter.
 exports.handler = function (event, context) {
     try {
-        // console.log("event.session.application.applicationId=" + event.session.application.applicationId);
+        console.log('Event is '+JSON.stringify(event));
+    	if ( event && event.session && event.session.application && event.session.application.applicationId ) {
+        	console.log("event.session.application.applicationId=" + event.session.application.applicationId);
+    	}
+
+    	if ( event.event_type == 'requests.status_changed' ) {
+    		console.log('Uber signaled an event status change.');
+    		context.succeed({'thank you':true});
+    		return;
+    	}
 
         /**
          * Uncomment this if statement and populate with your skill's application ID to
@@ -25,6 +34,9 @@ exports.handler = function (event, context) {
          }
         */
 
+        /**
+        Amazon Echo Commands
+        */
         if (event.session.new) {
             onSessionStarted({requestId: event.request.requestId}, event.session);
         }
@@ -44,6 +56,8 @@ exports.handler = function (event, context) {
         } else if (event.request.type === "SessionEndedRequest") {
             onSessionEnded(event.request, event.session);
             context.succeed();
+        } else {
+        	console.log('Unrecognized event.');
         }
     } catch (e) {
         context.fail("Exception: " + e);
@@ -86,6 +100,8 @@ function onIntent(intentRequest, session, callback) {
     	UberPickupConfirmIntent(intent, session, callback);
     } else if ("UberTimeEstimateIntent" === intentName) {
         UberTimeEstimateIntent(intent, session, callback);
+    } else if ("UberRequestDetailsIntent" === intentName) {
+        UberRequestDetailsIntent(intent, session, callback);
     } else if ("WeatherRain" === intentName) {
         getWeatherRain(intent, session, callback);
     } else if ("HelpIntent" === intentName) {
@@ -252,6 +268,39 @@ function UberPickupConfirmIntent(intent, session, callback) {
 	if ( respond ) {
 	    callback(sessionAttributes, buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
 	}
+}
+
+function UberRequestDetailsIntent(intent, session, callback) {
+
+    var cardTitle = intent.name;
+    var repromptText = "";
+    var sessionAttributes = {};
+    var shouldEndSession = true;
+    var speechOutput = "";
+    var respond = true;
+
+    console.log('Received Uber request details intent. Intent='+JSON.stringify(intent) +', Session='+JSON.stringify(session));
+
+    speechOutput = "This feature is not yet complete. DynamoDB is not setup";
+
+    callback(sessionAttributes, buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
+
+    // TODO: need persistent storage to get the latest request_id. Use DynamoDB (used in Scorekeeper Echo example from Amazon)
+    // clever trick to use session || db depending on whether session has the data we need
+    // var params = {
+    // 	request_id : 
+    // }
+
+	// UberSkillHandler.whatIsTheStatusOfMyRide(params, function(err,estimate) {
+	// ... and so on. copied from another function
+	// 	if ( err || !estimate ) {
+	// 		console.log('Error w/ time estimate: '+err);
+ //    		speechOutput = 'There was an error estimating the time.';	    				
+	// 	} else {
+	// 		speechOutput = 'An '+estimate.pronouncable_name+' can be here in '+estimate.pronouncable_time;
+	// 	}
+	// 	callback(sessionAttributes, buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
+	// });	
 }
 
 function UberTimeEstimateIntent(intent, session, callback) {

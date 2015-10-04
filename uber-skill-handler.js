@@ -109,6 +109,28 @@ var timeEstimatePromise = function(params) {
 	return deferred.promise;
 };
 
+// var requestDetailsPromise = function(params) {
+
+// 	console.log('making ride-request details request.... params='+JSON.stringify(params));
+
+// 	var deferred = Q.defer();
+
+// 	uber.resources.details(params, function (err, res) {
+
+// 	  console.log('[SKILL] ride-request details done.');
+
+// 	  if (err) {
+// 	  	console.error(err);
+// 	  	deferred.reject(err);
+// 	  } else {
+// 	  	console.log('ride-request details says'+ JSON.stringify(res));
+//   		deferred.resolve(res);
+//   	  }
+// 	});
+
+// 	return deferred.promise;
+// };
+
 var requestEstimatePromise = function(params) {
 
 	console.log('requesting ride estimate....');
@@ -175,19 +197,14 @@ var makePronouncableName = function(ride) {
 	switch(ride.display_name) {
 		case 'uberX':
 			return 'Uber ex';
-			break;
 		case 'uberXL':
 			return 'Uber excel';
-			break;
 		case 'UberBLACK':
 			return 'Uber Black';
-			break;
 		case 'UberSUV':
 			return 'Uber SUV';
-			break;
 		case 'uberTAXI':
-			return 'Uber Taxi'
-			break;
+			return 'Uber Taxi';
 	}
 	console.log('no pronouncement for '+ride.display_name);
 	return ride.display_name;
@@ -225,7 +242,7 @@ var getUsername = function(callback) {
 			console.error(err);
 			callback(err);
 		} else {
-			console.log(res)
+			console.log(res);
 			callback(undefined, 'Your usename name is' + res.first_name + ' ' + res.last_name);
 		// deferred.resolve(ride);
 		}
@@ -274,6 +291,12 @@ var howLongForARide = function(parameters, callback) {
 
 };
 
+var whatIsTheStatusOfMyRide = function(parameters, callback) {
+
+	uber.resources.details(params, callback);
+
+};
+
 /** 
 	TESTING ONLY
 **/
@@ -288,7 +311,7 @@ module.exports = {
 	whatIsMyName : getUsername,
 	findMeARide : findMeARide,
 	confirmRideRequest : confirmRideRequest,
-	howLongForARide : howLongForARide
-
+	howLongForARide : howLongForARide,
+	whatIsTheStatusOfMyRide : whatIsTheStatusOfMyRide
 };
 

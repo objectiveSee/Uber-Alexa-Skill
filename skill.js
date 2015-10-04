@@ -238,12 +238,25 @@ function UberPickupConfirmIntent(intent, session, callback) {
 	    		UberSkillHandler.confirmRideRequest(session.attributes.ride, myLocation, function(err,riderequest) {
 
 	    			if ( err || !riderequest ) {
+
 	    				console.log('Error confirming ride: '+err);
 			    		speechOutput = 'There was an error confirming your ride with Uber.';	    				
+
 	    			} else {
-	    				speechOutput = 'Called an '+session.attributes.ride.pronouncable_name;
-	    				if ( riderequest.surge_multiplier > 1 ) {
-	    					speechOutput = speechOutput + ' There is a surge of '+riderequest.surge_multiplier+'.';
+
+	    				console.log('ride request response: '+JSON.stringify(riderequest));
+	    				if ( riderequest.meta && riderequest.meta.surge_confirmation ) {	// handle surge pricing
+	    				
+	    					console.log('Handling surge!');
+	    					speechOutput = 'Surge pricing is currently in effect. Use the Uber app';
+	    				
+	    				} else {
+		    			
+		    				speechOutput = 'Called an '+session.attributes.ride.pronouncable_name;
+		    				if ( riderequest.surge_multiplier > 1 ) {
+		    					speechOutput = speechOutput + ' There is a surge of '+riderequest.surge_multiplier+'.';
+		    				}	    					
+	    				
 	    				}
 	    			}
 	    			callback(sessionAttributes, buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));

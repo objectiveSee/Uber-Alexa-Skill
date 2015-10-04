@@ -20,7 +20,7 @@ if (! config.has('Uber.sandbox')) {
 }
 
 
-var getList = function(params) {
+var findRidesAndSelectBest = function(params) {
 	var deferred = Q.defer();
 	uber.products.list(params, function (err, res) {
 	  if (err) {
@@ -65,7 +65,7 @@ var requestRidePromise = function(params) {
 
 };
 
-var makeRideRequest = function(ride, params) {
+var makeRideConfirmationRequest = function(ride, params) {
 
 	if ( !params.longitude || !params.latitude || !ride.product_id ) {
 
@@ -142,10 +142,10 @@ var makePronouncableName = function(ride) {
 // used for testing
 var getARide = function(params) {
 
-	return getList(params)
+	return findRidesAndSelectBest(params)
 	.then(function(ride) {
 		console.log('Making ride request now');
-		return makeRideRequest(ride, params);
+		return makeRideConfirmationRequest(ride, params);
 	});
 
 };
@@ -155,7 +155,7 @@ Public Methods
 */
 
 var findMeARide = function(parameters, callback) {
-	getList(parameters)
+	findRidesAndSelectBest(parameters)
 	.fail(function(error) {
 		callback(error);
 	})
@@ -183,7 +183,7 @@ var confirmRideRequest = function(ride, location, callback) {
 
 	console.log('Confirming ride request');
 
-	makeRideRequest(ride, location)
+	makeRideConfirmationRequest(ride, location)
 	.then(function(riderequest) {
 		try {
 			callback(undefined, riderequest);

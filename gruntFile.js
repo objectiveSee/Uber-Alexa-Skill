@@ -17,7 +17,7 @@ grunt.initConfig({
          options : {
          	region : 'us-east-1',
          	profile : 'personal',
-         	file_name: 'uber-alexa.js'
+         	file_name: 'skill.js'
       	}
 
       },
@@ -28,7 +28,7 @@ grunt.initConfig({
          options : {
          	region : 'us-east-1',
          	profile : 'personal',
-         	file_name: 'uber-alexa.js'
+         	file_name: 'skill.js'
       	}
    	  }
    }

@@ -216,7 +216,7 @@ function UberPickupConfirmIntent(intent, session, callback) {
 	    				console.log('Error confirming ride: '+err);
 			    		speechOutput = 'There was an error confirming your ride with Uber.';	    				
 	    			} else {
-	    				speechOutput = 'Uber request successful. Your'+session.attributes.ride.pronouncable_name;
+	    				speechOutput = 'Called an '+session.attributes.ride.pronouncable_name;
 	    				if ( riderequest.surge_multiplier > 1 ) {
 	    					speechOutput = speechOutput + ' There is a surge of '+riderequest.surge_multiplier+'.';
 	    				}

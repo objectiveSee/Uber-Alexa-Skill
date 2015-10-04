@@ -1,4 +1,4 @@
-var uberAlex = require('./skill.js');
+var skill = require('./skill.js');
 var config = require('config');
 
 var myLocation = config.get('Alexa.location');
@@ -15,6 +15,6 @@ var i = {
 	name: 'danny'
 };
 
-uberAlex.test(i, undefined, function(foo, text) {
+skill.test(i, undefined, function(foo, text) {
 	console.log('Alexa says: '+text.outputSpeech.text);
 });

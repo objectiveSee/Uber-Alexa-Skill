@@ -52,13 +52,12 @@ var requestRidePromise = function(params) {
 
 	uber.requests.requestRide(params, function (err, res) {
 
-	  console.log('[SKILL] requestRide() done.');
+	  console.log('[SKILL] requestRide() done. Res='+JSON.stringify(res) + 'err='+JSON.stringify(err));
 
 	  if (err) {
 	  	console.error(err);
 	  	deferred.reject(err);
 	  } else {
-	  	console.log('requestRidePromise says'+ JSON.stringify(res));
   		deferred.resolve(res);
   	  }
 	});

@@ -12,7 +12,7 @@ node_modules
 
 tmp
 
-config/*
+config/default.json
 
 # PROJECT SPECIFIC
 dist

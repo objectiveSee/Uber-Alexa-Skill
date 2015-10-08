@@ -105,6 +105,8 @@ function onIntent(intentRequest, session, callback) {
         UberTimeEstimateIntent(intent, session, callback);
     } else if ("UberRequestDetailsIntent" === intentName) {
         UberRequestDetailsIntent(intent, session, callback);
+    } else if ("UberDevInfoIntent" === intentName) {
+        UberDevInfoIntent(intent, session, callback);
     } else if ("WeatherRain" === intentName) {
         getWeatherRain(intent, session, callback);
     } else if ("HelpIntent" === intentName) {
@@ -290,7 +292,7 @@ function UberPickupConfirmIntent(intent, session, callback) {
 	    		});
 
 	    	} else {
-	    		speechOutput = 'ok. I wont call an Uber then.';
+	    		speechOutput = 'Maybe next time.';
 	    	}
 
 	    } else {
@@ -359,6 +361,27 @@ function UberTimeEstimateIntent(intent, session, callback) {
 		}
 		callback(sessionAttributes, buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
 	});	
+}
+
+function UberDevInfoIntent(intent, session, callback) {
+
+    var cardTitle = intent.name;
+    var repromptText = "";
+    var sessionAttributes = {};
+    var shouldEndSession = true;
+    var speechOutput = "";
+    var respond = true;
+
+    var sandbox = config.get('Uber.sandbox');
+
+    speechOutput = 'Uber skill is ';
+    if ( sandbox ) {
+    	speechOutput += 'using sandbox';
+    } else {
+    	speechOutput += 'using production';
+    }
+
+	callback(sessionAttributes, buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
 }
 
 function createPickupAttributes(date) {

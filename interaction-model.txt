@@ -1,0 +1,86 @@
+== INTENT SCHEMA == 
+
+{
+  "intents": [
+    {
+      "intent": "UberPickupIntent",
+      "slots": [
+      ]
+    },
+    {
+      "intent": "UberPickupConfirmIntent",
+      "slots": [
+        {
+          "name": "UserResponse",
+          "type":"USER_CONFIRMATIONS"
+        }
+      ]
+    },
+    {
+      "intent": "UberTimeEstimateIntent",
+      "slots": [
+      ]
+    },
+    {
+      "intent": "UberRequestDetailsIntent",
+      "slots" : [
+      ]
+    },
+    {
+      "intent" : "UberDevInfoIntent",
+      "slots" : [
+      ]
+    },
+    {
+      "intent": "WeatherRain",
+      "slots": [
+      ]
+    }
+  ]
+}
+
+== CUSTOM SLOTS ==
+
+USER_CONFIRMATIONS
+	yes
+	no
+
+== SAMPLE UTTERENCES ==
+
+UberPickupIntent pick me up
+UberPickupIntent call me a car
+UberPickupIntent send for a car
+UberPickupIntent to come
+
+UberPickupConfirmIntent {UserResponse}
+
+UberTimeEstimateIntent how far away an Uber is
+UberTimeEstimateIntent how far away a ride is
+UberTimeEstimateIntent how far away a car is
+UberTimeEstimateIntent how far away is an Uber
+UberTimeEstimateIntent how far away is a ride
+UberTimeEstimateIntent how far away is a car
+UberTimeEstimateIntent how long until an Uber gets here
+UberTimeEstimateIntent how long until a car gets here
+UberTimeEstimateIntent how long until an Uber can get here
+UberTimeEstimateIntent how long until a car get here
+UberTimeEstimateIntent where the nearest car is
+UberTimeEstimateIntent where the nearest uber is
+
+UberRequestDetailsIntent where is my ride
+UberRequestDetailsIntent status update
+UberRequestDetailsIntent where my car is
+UberRequestDetailsIntent ride status
+
+UberDevInfoIntent what environment is being used
+UberDevInfoIntent what the environment is
+UberDevInfoIntent whats the environment
+UberDevInfoIntent if it is using production
+UberDevInfoIntent if it is using sandbox
+
+WeatherRain is it raining
+WeatherRain is there drizzle
+WeatherRain is it drizzling
+WeatherRain is it drizzleing
+WeatherRain is it going to drizzle
+WeatherRain will it drizzle

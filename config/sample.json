@@ -1,0 +1,16 @@
+{
+  	"Uber": {
+		"client_id": "",
+		"client_secret": "",
+		"server_token": "",
+		"redirect_uri": "",
+		"access_token":"",
+		"sandbox" : true
+	},
+    "Alexa": {
+		"location": { "latitude": 0, "longitude": 0 }
+    },
+    "Weather" : {
+    	"api-key" : ""
+    }
+}

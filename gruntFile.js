@@ -1,4 +1,5 @@
 var grunt = require('grunt');
+var config = require('config');
 grunt.loadNpmTasks('grunt-aws-lambda');
 
 grunt.initConfig({
@@ -13,7 +14,7 @@ grunt.initConfig({
    	  
       default: {
          // function: 'CreateThumbnail'
-         arn : 'arn:aws:lambda:us-east-1:017523382944:function:UberAlexaLambdaFunction',
+         arn : config.get('Alexa.lambda-arn'),
          options : {
          	region : 'us-east-1',
          	profile : 'personal',
@@ -24,7 +25,7 @@ grunt.initConfig({
    },
    lambda_package: {
       default: {
-      	arn : 'arn:aws:lambda:us-east-1:017523382944:function:UberAlexaLambdaFunction',
+      	arn : config.get('Alexa.lambda-arn'),
          options : {
          	region : 'us-east-1',
          	profile : 'personal',

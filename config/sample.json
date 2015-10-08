@@ -8,7 +8,8 @@
 		"sandbox" : true
 	},
     "Alexa": {
-		"location": { "latitude": 0, "longitude": 0 }
+		"location": { "latitude": 0, "longitude": 0 },
+		"lambda-arn" : ""
     },
     "Weather" : {
     	"api-key" : ""

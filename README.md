@@ -43,4 +43,6 @@ Alexa, ask Uber if it is using sandbox. (Debugging Info)
 
 # Notes
 
+- The main entry point for the code is `skill.js` which uses boilerplate Skill code from Amazon. This is where most of the Alexa and speech code lives.
+- `uber-skill-handler.js` contains most of the code dealing with the Uber API.
 - Provides a `sandbox` flag in config for testing.

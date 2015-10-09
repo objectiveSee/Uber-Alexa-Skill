@@ -1,3 +1,16 @@
+# Sample Phrases
+
+```
+Alexa, tell Uber to pick me up.
+
+Alexa, ask Uber how far away the nearest car is.
+
+Alexa, ask Uber where my car is.
+
+Alexa, ask Uber if it is using sandbox. (Debugging Info)
+```
+
+
 # Setup
 
 1. All configuraton and user-specific variables are handled inside of `config/default.json`. Copy `config/sample.json` to `config/default.json` and fill out the appropriate fields. You will need to provide all of your API keys. For Uber, you will need a valid token from oAuth2.0 which is currently up to you. Optionally add a Forecast.io weather API key (`Weather.api-key`).
